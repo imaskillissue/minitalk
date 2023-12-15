@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.c                                           :+:      :+:    :+:   */
+/*   SignalUtils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ekarpawi <ekarpawi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,45 +10,27 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft/libft.h"
 #include <signal.h>
-#include "server.h"
+#include "client.h"
 
-t_all_the_garbage	g_;
-
-int	handle(char c)
+void	send_message(int pid, char *message)
 {
-	g_.current_char = assign_bit(g_.current_char, g_.bit_index, c);
-	if (g_.current_char == 0 && g_.bit_index == 8)
-		return (ft_printf("\n"));
-	if (++g_.bit_index == 8)
+	while (*message)
+		send_char(pid, *message++);
+	send_char(pid, '\n');
+}
+
+void	send_char(int pid, char c)
+{
+	int	i;
+
+	i = -1;
+	while (++i < 8)
 	{
-		ft_printf("%c", g_.current_char);
-		g_.bit_index = 0;
-		g_.current_char = 0;
+		if (c & (1 << i))
+			kill(pid, SIGUSR1);
+		else
+			kill(pid, SIGUSR2);
+		usleep(100);
 	}
-	return (0);
-}
-
-void	handle_sigusr1(int sig)
-{
-	(void)sig;
-	handle(1);
-}
-
-void	handle_sigusr2(int sig)
-{
-	(void)sig;
-	handle(0);
-}
-
-int	main(void)
-{
-	g_ = (t_all_the_garbage){0};
-	ft_printf("PID: %d\n", getpid());
-	signal(SIGUSR1, handle_sigusr1);
-	signal(SIGUSR2, handle_sigusr2);
-	while (1)
-		;
-	return (0);
 }
